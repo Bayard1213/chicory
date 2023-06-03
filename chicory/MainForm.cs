@@ -52,6 +52,8 @@ namespace chicory
             //    + "\nShowTip  " + Properties.Settings.Default.ShowTip.ToString()
             //    + "\nStartEnable  " + Properties.Settings.Default.StartEnable.ToString()
             //    + "\nUserLightTheme   " + UserLightTheme.ToString()
+            //    + "\nAcVal   " + UserAcValueIndex
+            //    + "\nDcVal   " + UserDcValueIndex
             //);
 
         }
@@ -158,10 +160,6 @@ namespace chicory
             {
                 SwichStandby();
             }
-        }
-        private void MainForm_Load(object sender, EventArgs e)
-        {
-            SaveUserAcDcValueIndex();
         }
         private void settingsToolStripMenuItem_Click(object sender, EventArgs e)
         {
