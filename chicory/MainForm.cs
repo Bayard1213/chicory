@@ -17,16 +17,20 @@ namespace chicory
     public partial class MainForm : Form
     {
         // переменные для хранения настроек пользователя
-        public static uint UserAcValueIndex, UserDcValueIndex;
+        public static uint UserAcPowerValueIndex, UserDcPowerValueIndex, UserAcVideoValueIndex, UserDcVideoValueIndex;
         // тема оформления 
         private static uint UserLightTheme;
-        // токеты сабгрупп в реестре
+        // токены сабгрупп в реестре
         public static Guid GUID_SLEEP_SUBGROUP = new Guid("238C9FA8-0AAD-41ED-83f4-97BE242C8F20");
         public static Guid GUID_STANDBY_TIMEOUT = new Guid("29F6C1DB-86DA-48C5-9FDB-F2B67B1F44DA");
+
+        public static Guid GUID_VIDEO_SUBGROUP = new Guid("7516b95f-f776-4464-8c53-06167f40cc99");
+        public static Guid GUID_VIDEO_IDLE = new Guid("3c0bc021-c8a8-4e07-a973-6b14cbcb2b7e");
         // идем до адреса активной схемы питания пользователя
         private static string AdressToPreferredPlan = "HKEY_LOCAL_MACHINE\\SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\ControlPanel\\NameSpace\\{025A5937-A6BE-4686-A844-36FE4BEC8B6D}";
         private static string GuidToPreferredPlan = Registry.GetValue(AdressToPreferredPlan, "PreferredPlan", null).ToString();
-        private static string AdressACDCValueIndex = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\" + GuidToPreferredPlan + "\\" + GUID_SLEEP_SUBGROUP + "\\" + GUID_STANDBY_TIMEOUT;
+        private static string AdressACDCPowerValueIndex = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\" + GuidToPreferredPlan + "\\" + GUID_SLEEP_SUBGROUP + "\\" + GUID_STANDBY_TIMEOUT;
+        private static string AdressACDCVideoValueIndex = "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\Power\\User\\PowerSchemes\\" + GuidToPreferredPlan + "\\" + GUID_VIDEO_SUBGROUP + "\\" + GUID_VIDEO_IDLE;
         // тут храним статут ожидания
         public static bool WaitingActive = false;
         private static bool TimerActive = false;
@@ -52,8 +56,8 @@ namespace chicory
             //    + "\nShowTip  " + Properties.Settings.Default.ShowTip.ToString()
             //    + "\nStartEnable  " + Properties.Settings.Default.StartEnable.ToString()
             //    + "\nUserLightTheme   " + UserLightTheme.ToString()
-            //    + "\nAcVal   " + UserAcValueIndex
-            //    + "\nDcVal   " + UserDcValueIndex
+            //    + "\nAcVal   " + UserAcPowerValueIndex
+            //    + "\nDcVal   " + UserDcPowerValueIndex
             //);
 
         }
@@ -62,19 +66,23 @@ namespace chicory
         {
             if (WaitingActive is true)
             {
-                PowerDllHelper.SetPowerSettings(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcValueIndex, UserDcValueIndex);
+                PowerDllHelper.SetPowerSettings(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex);
+                PowerDllHelper.SetPowerSettings(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex);
             }
         }
         // получаем значения полей для схемы спящего режима AC - питание от батареи, DC - питание от сети 
         private void SaveUserAcDcValueIndex()
         {
-            UserAcValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCValueIndex, "ACSettingIndex", null));
-            UserDcValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCValueIndex, "DCSettingIndex", null));
+            UserAcPowerValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCPowerValueIndex, "ACSettingIndex", null));
+            UserDcPowerValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCPowerValueIndex, "DCSettingIndex", null));
+
+            UserAcVideoValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCVideoValueIndex, "ACSettingIndex", null));
+            UserDcVideoValueIndex = Convert.ToUInt32(Registry.GetValue(AdressACDCVideoValueIndex, "DCSettingIndex", null));
         }
         // функция для выставления нужных значений при включении/выключении режима ожидания
-        private void AppliedAcDcValue(uint valueAc, uint valueDc, Icon notifyIcon, string notifyText, bool waitingStatus)
+        private void AppliedAcDcValue(Guid subgroup, Guid settingsField, uint valueAc, uint valueDc, Icon notifyIcon, string notifyText, bool waitingStatus)
         {
-            PowerDllHelper.SetPowerSettings(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, valueAc, valueDc);
+            PowerDllHelper.SetPowerSettings(subgroup, settingsField, valueAc, valueDc);
             notifyIcon1.Icon = notifyIcon;
             notifyIcon1.Text = notifyText;
             WaitingActive = waitingStatus;
@@ -111,20 +119,31 @@ namespace chicory
                     // сохраняем настройки юзера
                     SaveUserAcDcValueIndex();
                     //меняем иконку в зависимости от темы оформления
-                    if (UserLightTheme == 0) 
-                        AppliedAcDcValue(0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
-                    else if (UserLightTheme == 1) 
-                        AppliedAcDcValue(0, 0, Resources.icon_on_to_light, "chicory (on)", true);
+                    if (UserLightTheme == 0) {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                    }
+                    else if (UserLightTheme == 1)
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, 0, 0, Resources.icon_on_to_light, "chicory (on)", true);
+                    } 
                 }
                 // если есть таймер
                 else
                 {
                     timer1.Interval = (int)Properties.Settings.Default.WaitingTime * 60000;
                     SaveUserAcDcValueIndex();
-                    if (UserLightTheme == 0) 
-                        AppliedAcDcValue(0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
-                    else if (UserLightTheme == 1) 
-                        AppliedAcDcValue(0, 0, Resources.icon_on_to_light, "chicory (on)", true);
+                    if (UserLightTheme == 0)
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                    }
+                    else if (UserLightTheme == 1)
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, 0, 0, Resources.icon_on_to_dark, "chicory (on)", true);
+                    };
                     timer1.Start();
                     TimerActive = true;
                 }
@@ -136,17 +155,30 @@ namespace chicory
             {
                 if (TimerActive is false)
                 {
-                    if (UserLightTheme == 0) 
-                        AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                    if (UserLightTheme == 0)
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                    }
                     else if (UserLightTheme == 1) 
-                        AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                    { 
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                    }
                 }
                 else if (TimerActive is true)
                 {
-                    if (UserLightTheme == 0) 
-                        AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
-                    else if (UserLightTheme == 1)
-                        AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                    if (UserLightTheme == 0)
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                    }
+                    else if (UserLightTheme == 1) 
+                    {
+                        AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                        AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                    }
+                       
                     timer1.Stop();
                 }
                 ShowBallonTip("Standby disabled");
@@ -166,14 +198,25 @@ namespace chicory
             Settings SettingsForm = new Settings();
             SettingsForm.Show();
         }
-        
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            UserDllHelper.HideFromAltTab(this.Handle);
+        }
+
         // по завершению таймера делаем как было
         private void timer1_Tick(object sender, EventArgs e)
         {
-            if (UserLightTheme == 0) 
-                AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_dark, "chicoty (off)", false);
-            else if (UserLightTheme == 1)
-                AppliedAcDcValue(UserAcValueIndex, UserDcValueIndex, Resources.icon_off_to_light, "chicoty (off)", false);
+            if (UserLightTheme == 0)
+            {
+                AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+                AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_dark, "chicory (off)", false);
+            }
+            else if (UserLightTheme == 1) 
+            {
+                AppliedAcDcValue(GUID_SLEEP_SUBGROUP, GUID_STANDBY_TIMEOUT, UserAcPowerValueIndex, UserDcPowerValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+                AppliedAcDcValue(GUID_VIDEO_SUBGROUP, GUID_VIDEO_IDLE, UserAcVideoValueIndex, UserDcVideoValueIndex, Resources.icon_off_to_light, "chicory (off)", false);
+            }
         }
 
         // при закрытии приложения возвращаем, все зависимости от статуса ожидания, настройки пользователя

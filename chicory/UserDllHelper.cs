@@ -18,6 +18,21 @@ namespace chicory
             uint vk
         );
 
+        [DllImport("user32.dll")]
+        private static extern int SetWindowLong(IntPtr window, int index, int value);
+
+        [DllImport("user32.dll")]
+        private static extern int GetWindowLong(IntPtr window, int index);
+
+        private const int GWL_EXSTYLE = -20;
+        private const int WS_EX_TOOLWINDOW = 0x00000080;
+
+        public static void HideFromAltTab(IntPtr Handle)
+        {
+            SetWindowLong(Handle, GWL_EXSTYLE, GetWindowLong(Handle,
+                GWL_EXSTYLE) | WS_EX_TOOLWINDOW);
+        }
+
         //необходимые константы
         public const int MOD_ALT = 0x1;
         public const int MOD_CONTROL = 0x2;
