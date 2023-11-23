@@ -14,6 +14,10 @@ To start the standby mode, you need to click on the tray icon, or press the comb
 With a timeout value of 0, the application will wait for the icon to be clicked again to restore the user's hibernation configuration. If the timeout value is set in the settings, when the application is activated, a timer is started, after which the standby mode ends.   
    
 Optionally, you can also disable baloons tip and set the start of the standby mode when the application starts.   
+
+License
+--------
+This room design is under MIT license - see file [LICENSE](https://github.com/Bayard1213/TestingTools/blob/main/LICENSE) for details.
 <br><hr> 
 Реализация функционала Caffeine для Windows OS 10+ с использованием .NET Framework 4.8   
    
@@ -26,3 +30,8 @@ Optionally, you can also disable baloons tip and set the start of the standby mo
 При значении таймаута 0 приложение будет ожидать повторного клика по иконке для восстановления конфигурации спящего режима пользователя. В случае установки значения таймаута в настройках, при активации приложения запускается таймер по истечению которого ожидание завершается.   
    
 Опционально можно так же отключить всплывающие подсказки и назначить старт режима ожидания при запуске приложения 
+
+Лицензия
+--------
+Этот проект лицензирован согласно лицензии MIT - см. файл [LICENSE](https://github.com/Bayard1213/TestingTools/blob/main/LICENSE) для деталей.
+<br><hr> 
